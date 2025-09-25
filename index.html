@@ -1,0 +1,109 @@
+<!doctype html><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Self as System — Home</title>
+<style>
+:root{
+  --accent:#5fa7ff;
+  --accent-2:#9ad1ff;
+  --ink:#E5E7EB;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; color:var(--ink); font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto;
+  background-color:#0b1020;
+  /* 背景与作品页一致（已避免带状/分层） */
+  background-image:
+    radial-gradient(1300px 900px at 50% 16%,
+      rgba(48,82,155,.50) 0%,
+      rgba(30,52,110,.30) 40%,
+      rgba(18,34,76,.16) 62%,
+      rgba(14,24,50,0) 76%),
+    radial-gradient(1600px 1100px at 18% 42%,
+      rgba(40,72,140,.16) 0%,
+      rgba(40,72,140,0) 60%),
+    radial-gradient(1600px 1100px at 82% 42%,
+      rgba(40,72,140,.14) 0%,
+      rgba(40,72,140,0) 60%),
+    radial-gradient(2600px 1700px at 50% 140%,
+      rgba(7,12,24,.18) 0%,
+      rgba(7,12,24,0) 86%),
+    linear-gradient(180deg,#0b1020 0%, #0c1733 100%);
+  background-repeat:no-repeat;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 0 0, rgba(255,255,255,.015) 0 20%, transparent 21% 100%),
+    radial-gradient(1.5px 1.5px at 1px 1px, rgba(0,0,0,.018) 0 20%, transparent 21% 100%);
+  background-size:3px 3px; mix-blend-mode:soft-light; opacity:.12;
+}
+
+/* 居中舞台 */
+.wrap{min-height:100svh; display:grid; place-items:center; padding:28px 20px}
+.hero{text-align:center; display:grid; gap:18px; justify-items:center}
+
+/* 大标题更“海报感” */
+h1{
+  margin:0;
+  font-weight:500;
+  letter-spacing:.6px;
+  font-size:clamp(44px, 7vw, 88px);      /* 小屏→大屏自适应 */
+  line-height:1.05;
+}
+h1 .g{
+  background:linear-gradient(90deg,var(--accent-2),var(--accent));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 10px 30px rgba(95,167,255,.18));
+}
+
+/* 简短说明 */
+.sub{opacity:.80; max-width:760px; font-size:clamp(14px, 2.2vw, 18px)}
+
+/* 高级感按钮：无边框、柔和渐变、发光 */
+.btn{
+  appearance:none; border:none; cursor:pointer; text-decoration:none; color:#071021;
+  font-weight:700; letter-spacing:.3px;
+  padding:16px 28px; border-radius:14px;
+  font-size:clamp(16px, 2.6vw, 20px);
+  background:
+    radial-gradient(120% 180% at 20% 0%, rgba(255,255,255,.25), rgba(255,255,255,0) 40%),
+    linear-gradient(90deg, #99d3ff 0%, #5fa7ff 45%, #6d86ff 100%);
+  box-shadow:
+    0 10px 30px rgba(47,120,255,.35),
+    inset 0 1px 0 rgba(255,255,255,.25);
+  transition: transform .12s ease, filter .18s ease, box-shadow .18s ease;
+  backdrop-filter:saturate(1.1);
+}
+.btn:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.03);
+  box-shadow:
+    0 16px 40px rgba(47,120,255,.42),
+    inset 0 1px 0 rgba(255,255,255,.28);
+}
+.btn:active{ transform:translateY(0) scale(.99) }
+.kbd-note{opacity:.55; font-size:12px; margin-top:4px}
+
+/* 小屏优化 */
+@media (max-width:680px){
+  .sub{max-width:92%}
+}
+</style>
+
+<div class="wrap">
+  <section class="hero" aria-label="intro">
+    <h1><span class="g">Split Self</span></h1>
+    <p class="sub">A non-linear self-portrait built from my Google search history
+       where the “data self” meets the “felt self.”</p>
+    <a class="btn" href="slider.html" id="enterBtn">Enter the Portrait</a>
+  </section>
+</div>
+
+<script>
+/* 键盘 Enter 直接进入 */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('enterBtn').click();
+});
+</script>

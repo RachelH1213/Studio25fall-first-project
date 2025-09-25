@@ -1,0 +1,460 @@
+<!doctype html><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Split Self(Data-connected)</title>
+<style>
+:root{
+  --mix:.5; --cut:50%;
+  --yShift:-10%;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  color:#E5E7EB; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto;
+  background-color:#0b1020;                 /* 安全底色 */
+
+body{
+  /* ...保持你的其它内容... */
+  background-image:
+    radial-gradient(1200px 900px at 50% 18%,
+      rgba(38,63,120,.55) 0%,
+      rgba(22,36,74,.35) 40%,
+      rgba(12,22,44,.15) 62%,
+      rgba(12,20,40,0) 75%),
+    radial-gradient(2000px 1400px at 50% 120%,   /* ← 原来 1400×1000 at 50% 100% */
+      rgba(7,12,24,.35) 0%,
+      rgba(7,12,24,0) 78%),                     /* ← 边界更远更软 */
+    linear-gradient(180deg,#0b1020 0%,#0a1530 100%);
+}
+
+/* 降低纹理的存在感，避免“强调”边界 */
+body::before{ opacity:0.12; }
+  background-repeat:no-repeat;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none;
+  background-image:
+    radial-gradient(2px 2px at 0 0, rgba(255,255,255,.02) 0 20%, transparent 21% 100%),
+    radial-gradient(2px 2px at 1px 1px, rgba(0,0,0,.02) 0 20%, transparent 21% 100%);
+  background-size:3px 3px;                  /* 微纹理（非重复噪点） */
+  mix-blend-mode:soft-light; opacity:.35;
+}
+.wrap{max-width:1100px;margin:28px auto;padding:0 16px}
+h1{font-weight:900;margin:0 0 8px;text-align:center}
+.sub{opacity:.72;text-align:center;margin:0 10px 14px}
+.metrics{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 4px}
+.pill{background:#111827;border:1px solid #334155;border-radius:999px;padding:6px 12px;font-size:14px}
+.pill b{color:#c8ddff}
+.chips-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0 2px}
+.chip{background:#111827;border:1px solid #334155;border-radius:999px;
+  padding:6px 12px;font-size:14px;color:#dbe5ff;cursor:pointer;user-select:none;
+  transition:transform .12s ease, background .12s ease, opacity .12s linear;}
+.chip b{color:#c8ddff}
+.chip:hover{transform:translateY(-1px)}
+.chip.active{background:#0b3266;border-color:#5fa7ff}
+.segment{display:flex;gap:6px;justify-content:center;margin:6px 0 0}
+.seg{background:#0f172acc;border:1px solid #374151;color:#cdd7ee;padding:6px 10px;border-radius:10px;cursor:pointer;font-size:13px}
+.seg.active{background:#0b3266;border-color:#5fa7ff}
+.hint{opacity:.6;font-size:12px;text-align:center;margin-top:4px}
+
+/* 舞台与图层 */
+.stage{position:relative;max-width:880px;margin:12px auto;aspect-ratio:4/5;transform-style:preserve-3d}
+.stage .layer{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain}
+.data{filter: blur(.25px)}
+.real{opacity:var(--mix);filter: blur(0);transition: opacity .12s linear}
+.mask{position:absolute;inset:0;pointer-events:none;
+  -webkit-mask:linear-gradient(to right, #000 var(--cut), transparent var(--cut));
+          mask:linear-gradient(to right, #000 var(--cut), transparent var(--cut));}
+.knife{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to right,
+    transparent calc(var(--cut) - 1px),
+    rgba(255,255,255,.28) var(--cut),
+    transparent calc(var(--cut) + 1px));
+  filter:blur(1.4px);opacity:.5;mix-blend-mode:overlay}
+
+/* 把滑杆改为居中悬浮在舞台上方，并附带说明文字 */
+.panel{
+  position:absolute; z-index:5; left:50%; top:0%;
+  transform:translate(-50%,0);
+  display:grid; grid-template-columns:auto 280px auto;
+  align-items:center; gap:10px;
+  background:rgba(8,14,28,.35);
+  border:1px solid #233042; border-radius:14px;
+  padding:8px 12px; backdrop-filter:blur(4px);
+}
+.panel input[type="range"]{ width:280px; }
+.panel .note{
+  grid-column:1 / -1; text-align:center; margin-top:2px;
+  font-size:12px; opacity:.78; letter-spacing:.2px;
+}
+
+/* 标签（整体上移：--yShift） */
+.labels{ --dx: 0px; position:absolute; top:0; bottom:0; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+.labels-left{  left:2%;  width:34%; align-items:flex-start; }
+.labels-right{ right:2%; width:34%; align-items:flex-end; }
+.label{ position:absolute; left:0; right:0; top:calc(var(--y,50%) + var(--yShift)); transform:translateY(-50%); pointer-events:auto; will-change:transform,opacity }
+.label.tech{background:#0f1629cc; border:1px solid #5fa7ff; border-radius:12px; padding:8px 12px; color:#d9e7ff;
+  font:13.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:.2px; box-shadow:0 6px 18px rgba(0,0,0,.25); position:relative;}
+.label.tech::before{content:""; position:absolute; top:50%; left:100%; width:26px; height:1px; background:#5fa7ff; opacity:.85; transform:translateY(-50%);}
+.label.hand{background:transparent; border:0; color:#ffd6d6; font:22px/1.2 "Bradley Hand","Noteworthy","Segoe Script","Comic Sans MS",cursive;
+  transform-origin:right center; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); position:relative; padding:2px 6px; border-radius:6px;}
+.label.hand::before{content:""; position:absolute; top:50%; right:100%; width:28px; height:1.2px; background:#ff8da1; opacity:.95; transform:translateY(-50%);}
+.label.hand::after{content:""; position:absolute; left:6px; right:6px; bottom:-4px; height:6px; background:repeating-linear-gradient(90deg,#ff9bb0 0 6px,transparent 6px 12px); opacity:.35; filter:blur(.3px)}
+/* 左侧 */
+.labels-left .label{
+  --t: calc(1 - var(--mix)); --tx: calc(-44px * (1 - var(--t))); --sc: calc(.92 + .08*var(--t));
+  transform: translateY(-50%) translateX(calc(var(--tx) + var(--dx))) scale(var(--sc)) rotate(-0.2deg);
+  opacity: calc(.28 + .72*var(--t)); transition: transform .12s linear, opacity .12s linear;
+}
+/* 右侧 */
+.labels-right .label{
+  --t: var(--mix); --tx: calc(44px * (1 - var(--t))); --sc: calc(.92 + .08*var(--t));
+  transform: translateY(-50%) translateX(calc(var(--tx) + var(--dx))) scale(var(--sc)) rotate(.2deg);
+  opacity: calc(.22 + .78*var(--t)); transition: transform .12s linear, opacity .12s linear;
+}
+.reveal-right .labels-right .label.pop,
+.reveal-left  .labels-left  .label.pop{ animation:pop .28s cubic-bezier(.2,.8,.25,1.4) both }
+@keyframes pop{ 0%{transform:translateY(-50%) translateX(0) scale(.88); opacity:.2} 80%{transform:translateY(-50%) translateX(-2px) scale(1.04); opacity:1} 100%{transform:translateY(-50%) translateX(0) scale(1)} }
+
+/* 时间轴 */
+/* 时间轴（加高 + 美化） */
+.timeline{
+  max-width:980px;
+  margin:90px auto 0;
+  position:relative;
+  padding:16px 18px 12px;                /* 卡片内边距 */
+  background:rgba(10,16,32,.45);         /* 玻璃卡片感 */
+  border:1px solid #24324d;
+  border-radius:16px;
+  backdrop-filter:blur(4px);
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+.tbar{
+  display:grid;
+  grid-template-columns:repeat(24,1fr);
+  gap:8px;                               /* 条之间更松 */
+  align-items:end;                        /* 从底部长起来 */
+  height:72px;                           /* ← 时间轴总高度（可改 64/80/96） */
+}
+.tbar span{
+  position:relative;
+  height:100%;
+  border-radius:10px;
+  background:linear-gradient(180deg,#0f1a33,#0b1426);
+  border:1px solid #22304a;
+  overflow:hidden;
+  transition:transform .18s ease;
+}
+.tbar span::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:0;
+  height:calc(var(--fill,0) * 1%);       /* JS 写入 0–100 */
+  background:linear-gradient(180deg,#9ad1ff 0%, #5fa7ff 60%, #3774ff 100%);
+  border-radius:8px 8px 3px 3px;
+  box-shadow:inset 0 2px 8px rgba(95,167,255,.45);
+  transition:height .18s ease, filter .18s ease;
+}
+.tbar span:hover{ transform:translateY(-2px) }
+.tbar span:hover::after{ filter:brightness(1.08) }
+
+/* 峰值徽标 */
+.tbar span.peak::before{
+  content:"peak";
+  position:absolute;
+  top:-18px; left:50%; transform:translateX(-50%);
+  font-size:11px; color:#cfe6ff;
+  padding:2px 6px; border-radius:6px;
+  background:#0b3266; border:1px solid #5fa7ff;
+}
+
+/* 时间段淡色带（保留你的原有逻辑） */
+.tlegend{display:flex;justify-content:space-between;opacity:.6;font-size:12px;margin-top:6px}
+.band{position:absolute;left:0;right:0;height:26px;top:-6px;pointer-events:none}
+.band .zone{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,rgba(95,167,255,.18),rgba(95,167,255,0));border-radius:6px}
+.band .zone.night{background:linear-gradient(180deg,rgba(255,141,161,.18),rgba(255,141,161,0))}
+.band label{position:absolute;top:-16px;font-size:12px;opacity:.7}
+
+/* 工具提示 */
+#tTip{
+  position:absolute; pointer-events:none;
+  padding:6px 8px; font-size:12px; color:#cfe6ff;
+  background:#0f1629; border:1px solid #345; border-radius:8px;
+  transform:translate(-50%,-120%); opacity:0; transition:opacity .12s ease;
+}
+#tTip.show{ opacity:1 }
+
+body[data-filter] .label{opacity:.18 !important; filter:saturate(.3)}
+body[data-filter] .label[data-show="1"]{opacity:1 !important; filter:none}
+
+@media (max-width:760px){
+  .label.hand{ font-size:19px }
+  .label.tech{ font-size:12.5px }
+  .labels-left{ left:1.2%; width:40% }
+  .labels-right{ right:1.2%; width:40% }
+}
+@media (prefers-reduced-motion: reduce){ .label{transition:none; animation:none} .real{transition:none} }
+</style>
+
+<div class="wrap">
+  <a href="index.html" style="
+  position:fixed; left:16px; top:16px; z-index:99;
+  text-decoration:none; color:#cfe1ff;
+  background:rgba(8,14,28,.45); border:1px solid #233042;
+  padding:6px 10px; border-radius:10px; backdrop-filter:blur(4px);
+">← Home</a>
+  <h1>Split Self</h1>
+  <p class="sub"></p>
+
+  <div class="metrics" id="metrics"></div>
+
+  <div class="chips-row" id="chips"></div>
+  <!-- <div class="segment">
+    <button class="seg" data-left="all">Left: All</button>
+    <button class="seg" data-left="school">School</button>
+    <button class="seg" data-left="money">Money</button>
+    <button class="seg" data-left="tools">Tools</button>
+    <span style="width:12px"></span>
+    <button class="seg" data-right="all">Right: All</button>
+    <button class="seg" data-right="EN">EN</button>
+    <button class="seg" data-right="ZH">ZH</button>
+  </div> -->
+  <p class="hint">Click a chip to focus a theme; use filters to show left-side categories or right-side language (EN/ZH).</p>
+
+  <!-- ✅ 滑杆移入舞台内，居中悬浮，附带 Waze 文案 -->
+  <div class="stage">
+    <img class="layer data" src="data_face.png" alt="Data face">
+    <img class="layer real" src="real_face.png" alt="Real face">
+    <div class="layer mask"  aria-hidden="true"></div>
+    <div class="layer knife" aria-hidden="true"></div>
+
+    <div class="panel" aria-label="Reveal slider">
+      <span style="justify-self:end">Data</span>
+      <input id="reveal" type="range" min="0" max="100" value="50" aria-label="Reveal Real Face">
+      <span>Real</span>
+      <div class="note"> Data Face → Real Face</div>
+    </div>
+
+    <div class="labels labels-left"  id="labelsLeft"  aria-label="Data-side labels"></div>
+    <div class="labels labels-right" id="labelsRight" aria-label="Real-side labels"></div>
+  </div>
+
+  <div class="timeline" aria-label="Hourly activity">
+    <div class="band" id="bands"></div>
+    <div class="tbar" id="tbar"></div>
+    <div class="tlegend"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>
+  </div>
+</div>
+
+<script>
+const slider = document.getElementById('reveal');
+const root   = document.documentElement;
+function sync(){ const v = +slider.value; const mix = (v/100).toFixed(3);
+  root.style.setProperty('--mix', mix); root.style.setProperty('--cut', v + '%');
+  root.classList.toggle('reveal-right', v > 70); root.classList.toggle('reveal-left',  v < 30);
+}
+slider.addEventListener('input', sync); sync();
+slider.addEventListener('keydown', (e)=>{ const step = (e.shiftKey?10:1);
+  if(e.key==='ArrowRight'){ slider.value = Math.min(100, +slider.value + step); slider.dispatchEvent(new Event('input')); }
+  if(e.key==='ArrowLeft'){  slider.value = Math.max(0,   +slider.value - step); slider.dispatchEvent(new Event('input')); }
+});
+
+let DATA = null;
+init();
+async function init(){
+  try{ const res = await fetch('history.json', {cache:'no-store'});
+       if(res.ok) DATA = await res.json(); }catch(e){}
+  if(!DATA) return;
+  renderMetrics();
+  ensureExtraLabels();   // ← 新增：在左右空白处补标签
+  renderLabels();
+  renderChips();
+  renderTimeline();
+  bindFilters();
+}
+
+function pct(x){ return Math.round(x*1000)/10; }
+function renderMetrics(){
+  const m = document.getElementById('metrics');
+  const en = pct(DATA.language?.EN||0), zh = pct(DATA.language?.ZH||0);
+  const night = pct(DATA.night_pct||0);
+  const maxh = DATA.max_per_hour||Math.max(...(DATA.hourly||[0]));
+  const hstr = (DATA.max_hour!=null)? String(DATA.max_hour).padStart(2,'0')+':00' : '—';
+  m.innerHTML = `
+    <span class="pill">Lang <b>EN ${en}%</b> / <b>ZH ${zh}%</b></span>
+    <span class="pill">Late night 23–03 ≈ <b>${night}%</b></span>
+    <span class="pill">Peak <b>${hstr}</b> · Max/hour <b>${maxh}</b></span>
+  `;
+}
+
+function renderChips(){
+  const c = document.getElementById('chips'); c.innerHTML = '';
+  (DATA.chips||[]).forEach(ch=>{
+    const el = document.createElement('span');
+    el.className = 'chip'; el.dataset.key = ch.key;
+    el.textContent = ch.label + ' '; const b = document.createElement('b'); b.textContent = ch.count||0; el.appendChild(b);
+    c.appendChild(el);
+  });
+}
+
+function renderLabels(){
+  const L = document.getElementById('labelsLeft'); const R = document.getElementById('labelsRight');
+  L.innerHTML=''; R.innerHTML='';
+  (DATA.labels.left||[]).forEach((it,i)=>{
+    const el = document.createElement('div'); el.className = 'label tech' + (i===0?' pop':'');
+    el.style.setProperty('--y', (it.y||50) + '%'); el.dataset.side='left';
+    if(it.group) el.dataset.group = it.group;
+    if(it.dx != null) el.style.setProperty('--dx', it.dx + 'px'); // ★ 新增
+el.textContent = it.text;
+    el.textContent = it.text;
+    L.appendChild(el);
+  });
+  (DATA.labels.right||[]).forEach((it,i)=>{
+    const el = document.createElement('div'); el.className = 'label hand' + (i===0?' pop':'');
+    el.style.setProperty('--y', (it.y||50) + '%'); el.dataset.side='right';
+    if(it.group) el.dataset.group = it.group;
+    if(it.dx != null) el.style.setProperty('--dx', it.dx + 'px'); // ★ 新增
+el.textContent = it.text;
+    el.textContent = it.text;
+    R.appendChild(el);
+  });
+}
+
+/* 在左右空白处补几条标签（仍受 chips/分组/语言过滤控制） */
+function ensureExtraLabels(){
+  if(!DATA.labels) DATA.labels = {left:[], right:[]};
+  DATA.labels.left  = DATA.labels.left  || [];
+  DATA.labels.right = DATA.labels.right || [];
+
+  const extraL = [
+    {y:18, text:"Morning planning / Parsons quick checks", group:"school"},
+    {y:28, text:"USD→CNY trend watch", group:"money"},
+    {y:36, text:"Figma / CSS quick fixes", group:"tools"}
+  ];
+  const extraR = [
+    {y:22, text:"思考用英文，情绪用中文", lang:"ZH", group:"school"},
+    {y:30, text:"Tiny lyrics hunts = breaks", lang:"EN", group:"ent"},
+    {y:38, text:"When anxious, I skim quick tips", lang:"EN", group:"health"}
+  ];
+  while(DATA.labels.left.length  < 6 && extraL.length) DATA.labels.left.push(extraL.shift());
+  while(DATA.labels.right.length < 6 && extraR.length) DATA.labels.right.push(extraR.shift());
+}
+
+function bindFilters(){
+  const chips = document.getElementById('chips');
+
+  // 先清一次（防止热刷新导致重复监听）
+  chips.replaceWith(chips.cloneNode(true));
+  const chipsNew = document.getElementById('chips');
+
+  chipsNew.addEventListener('click', (e)=>{
+    const el = e.target.closest('.chip');
+    if(!el) return;
+
+    const key = 'chip-' + el.dataset.key;
+    const isActive = (document.body.dataset.filter === key);
+
+    if (isActive) {
+      // 再点同一个：取消选择 → 恢复全亮
+      document.body.removeAttribute('data-filter');
+      chipsNew.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+      showByFilter();                      // ← 重置显示
+    } else {
+      // 选中新的 chip
+      chipsNew.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+      document.body.dataset.filter = key;  // ← 这里会触发 body[data-filter] 的样式
+      showByFilter();
+    }
+  });
+
+  // 初始：全亮
+  showByFilter();
+}
+function showByFilter(leftFilter='all', rightFilter='all'){
+  document.querySelectorAll('.label').forEach(el=>el.removeAttribute('data-show'));
+  let any = false;
+  const chip = (document.body.dataset.filter||'').replace('chip-',''); // school/money/tools/ent/health/travel
+
+  // 1) 主题 chip：左右通杀
+  if (chip) {
+    any = true;
+    document.querySelectorAll('.label').forEach(el=>{
+      const groups = (el.dataset.group||'').split(/\s+/);
+      if (groups.includes(chip)) el.setAttribute('data-show','1');
+    });
+  }
+
+  // 2) 左侧附加筛（只有不是 all 才生效；否则在无 chip 时全亮）
+  if (leftFilter && leftFilter !== 'all') {
+    any = true;
+    document.querySelectorAll('.label[data-side="left"]').forEach(el=>{
+      const groups = (el.dataset.group||'').split(/\s+/);
+      if (groups.includes(leftFilter)) el.setAttribute('data-show','1');
+      else if (el.getAttribute('data-show')!=='1') el.removeAttribute('data-show');
+    });
+  } else if (!chip) {
+    document.querySelectorAll('.label[data-side="left"]').forEach(el=>el.setAttribute('data-show','1'));
+  }
+
+  // 3) 右侧附加筛（与你现在的“按 group 高亮”一致）
+  if (rightFilter && rightFilter !== 'all') {
+    any = true;
+    document.querySelectorAll('.label[data-side="right"]').forEach(el=>{
+      const groups = (el.dataset.group||'').split(/\s+/);
+      if (groups.includes(rightFilter)) el.setAttribute('data-show','1');
+      else if (el.getAttribute('data-show')!=='1') el.removeAttribute('data-show');
+    });
+  } else if (!chip) {
+    document.querySelectorAll('.label[data-side="right"]').forEach(el=>el.setAttribute('data-show','1'));
+  }
+
+  if (any) document.body.setAttribute('data-filter','1');
+  else document.body.removeAttribute('data-filter');
+}
+function renderTimeline(){
+  const bar = document.getElementById('tbar'); bar.innerHTML='';
+  const arr = DATA.hourly || [];
+  const M = DATA.max_per_hour || Math.max(...arr, 1);
+  const peakIdx = arr.indexOf(Math.max(...arr));   // 找到峰值
+
+  // 准备 tooltip（一次创建）
+  const timeline = document.querySelector('.timeline');
+  let tip = document.getElementById('tTip');
+  if(!tip){ tip = document.createElement('div'); tip.id = 'tTip'; timeline.appendChild(tip); }
+
+  for (let i = 0; i < 24; i++) {
+    const v = arr[i] || 0;
+    const fill = Math.max(3, Math.round(100 * v / M));   // 最低 3% 视觉可见
+    const span = document.createElement('span');
+    span.style.setProperty('--fill', fill);
+    span.dataset.hour = i;
+    span.dataset.count = v;
+    if (i === peakIdx) span.classList.add('peak');
+
+    // 提示：跟随鼠标
+    span.addEventListener('mouseenter', (e)=>{
+      tip.classList.add('show');
+      tip.textContent = `${String(i).padStart(2,'0')}:00 · ${v}`;
+    });
+    span.addEventListener('mousemove', (e)=>{
+      const r = timeline.getBoundingClientRect();
+      tip.style.left = (e.clientX - r.left) + 'px';
+      // 放在条上方一点
+      const top = bar.getBoundingClientRect().top - r.top;
+      tip.style.top = (top - 6) + 'px';
+    });
+    span.addEventListener('mouseleave', ()=> tip.classList.remove('show'));
+
+    bar.appendChild(span);
+  }
+
+  // 仍然保留你的时间段淡色带
+  const bands = document.getElementById('bands'); bands.innerHTML = '';
+  function mk(start,end,cls,label){
+    const total=24; const colW = 100/total; const left = start*colW; const width = (end-start+1)*colW;
+    const z = document.createElement('div'); z.className='zone '+cls; z.style.left=left+'%'; z.style.width=width+'%'; bands.appendChild(z);
+    const lb = document.createElement('label'); lb.textContent=label; lb.style.left = `calc(${left}% + 2px)`; bands.appendChild(lb);
+  }
+  mk(9,12,'','09–12'); mk(20,22,'','20–22'); mk(23,23,'night','23–03'); mk(0,3,'night','');
+}
+</script>

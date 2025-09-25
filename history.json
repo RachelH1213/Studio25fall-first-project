@@ -1,0 +1,185 @@
+{
+  "language": {
+    "EN": 0.818,
+    "ZH": 0.182
+  },
+  "night_pct": 0.142,
+  "max_per_hour": 178,
+  "max_hour": 9,
+  "hourly": [
+    24,
+    66,
+    78,
+    46,
+    47,
+    45,
+    53,
+    32,
+    104,
+    178,
+    133,
+    125,
+    107,
+    146,
+    87,
+    109,
+    80,
+    72,
+    57,
+    63,
+    174,
+    161,
+    117,
+    99
+  ],
+    "steps": {
+    "one": 0.214,
+    "two_three": 0.369,
+    "four_plus": 0.417
+  },
+  "chips": [
+    {
+      "key": "school",
+      "label": "Academia",
+      "count": 89
+    },
+    {
+      "key": "money",
+      "label": "Money/Exchange",
+      "count": 58
+    },
+    {
+      "key": "tools",
+      "label": "Coding/Design",
+      "count": 27
+    },
+    {
+      "key": "ent",
+      "label": "Entertainment",
+      "count": 26
+    },
+    {
+      "key": "health",
+      "label": "Health",
+      "count": 5
+    },
+    {
+      "key": "travel",
+      "label": "Travel",
+      "count": 12
+    },
+    {
+      "key": "data",
+      "label": "data",
+      "count": 3
+      
+    }
+    
+  ],
+  "labels": {
+    "left": [
+      {
+        "dx": -66,
+        "y": 24,
+        "text": "Morning peak: 09:00 | most searches happen here",
+        "group": "data"
+      },
+      {
+        "dx": -78,
+        "y": 30,
+        "text": "Exchange rate (USD→CNY) | repeat checks",
+        "group": "money"
+      },
+      {
+        "dx": -73,
+        "y": 35, 
+        "text": "Visa / hotel / route queries | pre-trip clusters", 
+        "group": "travel"
+    },
+      {
+        "dx": -180,
+        "y": 46,
+        "text": "Professor & course reviews | quick compare",
+        "group": "school"
+      },
+      {
+        "dx": -143,
+        "y": 50,
+        "text": "JS / CSS debug notes | mostly 2–3 steps chains",
+        "group":"tools"
+      },
+      {
+        "dx": -125,
+        "y": 55,
+        "text": "Lyrics look-ups | short breaks",
+        "group": "ent"
+      },
+      {
+        "dx": -199,
+        "y": 62,
+        "text": "Late-night share ≈ 14.2% | 23–03 window",
+        "group": "data"
+      },
+      {
+        "dx": -198,
+        "y": 63,
+        "text": "Language split | EN 74% / ZH 26%",
+        "group": "data"
+      }
+    ],
+    "right": [
+      {
+        "dx": 46,
+        "y": 20,
+        "text": "That's actually surprising, I thought it would be sometimes at night",
+        "group": "data"
+        
+      },
+      {
+        "dx": 83,
+        "y": 23,
+         "text": " Exchanging money is getting so frustrating every time",
+        "group": "money"
+        
+      },
+      {
+        "dx": 26,
+        "y": 30,
+        "text": "Visa is driving me crazy",
+        "group": "travel"
+        
+      },
+      {
+        "dx": 36,
+        "y": 38,
+        "text": "I hate to select classes every semester",
+        "group": "school"
+        
+      },
+      {
+        "dx": -15,
+        "y": 44,
+        "text": "When stuck, I search–fix–leave",
+        "group": "tools"
+      },
+      {
+        "dx": 105,
+        "y": 50,
+        "text": "what was that song??",
+        "group": "ent"
+      },
+      {
+        "dx": 190,
+        "y": 55,
+        "text": "How to sleep faster?? I search that every night tho it never helps",
+        "group": "data"
+      },
+      {
+        "dx": 85,
+        "y": 60,
+        "text": "我作业写不完了",
+        "group": "data"
+      }
+    ]
+  }
+}
